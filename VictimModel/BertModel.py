@@ -15,6 +15,8 @@ class sst2_Dataset(Dataset):
         self.len = len(dataset)
 
     def __getitem__(self, index):
+        这个地方对数据的处理应该尽量方法init方法里面，因为这个在跑模型的时候每次都会重复以下这些操作（包括convert token， 创建tensor)，比较费时间，最好在初始化的时候全部做好
+        
         sentence, label = train_set.iloc[index, :]
         # 获取句子的tokens
         tokens = ['[CLS]']
@@ -40,13 +42,13 @@ def collate_fn(data):
     # 利用zero_padding填充不等长的句子
     input_ids = pad_sequence(input_ids, batch_first=True)
     token_type_ids = pad_sequence(token_type_ids, batch_first=True)
-    attention_mask = torch.ones_like(token_type_ids)
+    attention_mask = torch.ones_like(token_type_ids)   这里的attention mask 应该有点问题，最好再查看一下原来博客是怎么做的 https://leemeng.tw/attack_on_bert_transfer_learning_in_nlp.html
     return input_ids, token_type_ids, attention_mask, label
 
 
 # 训练模型
 def train(net, trainloader, testloader=None):
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-5)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-5)   最好用 AdamW， weight_decay 当做超参数进行调整
     epoch = 20
     total_num = len(trainloader)
     max_accuracy = 0
@@ -97,7 +99,7 @@ def get_prediction(net, dataloader):
             prediction = outputs.logits
             _, prediction = torch.max(prediction, 1)
             correct += (prediction == data[3]).sum().item()
-            total += batch_size
+            total += batch_size   这里直接+batch_size 应该有点问题， 最后一个batch 应该不足 batch_size 大小
     print('正确率为{:.2f}%'.format(correct / total * 100))
     return correct / total * 100
 
@@ -113,7 +115,7 @@ if __name__ == '__main__':
     # 加载DataLoader
     TRAIN_BATCH_SIZE = 128
     TEST_BATCH_SIZE = 128
-    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, collate_fn=collate_fn)
+    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, collate_fn=collate_fn)  这里要shuffle
     test_dataloader = DataLoader(test_dataset, batch_size=TEST_BATCH_SIZE, collate_fn=collate_fn)
     # 加载已有的情感分类模型BertForSequenceClassification
     net = BertForSequenceClassification.from_pretrained('bert-base-uncased')
