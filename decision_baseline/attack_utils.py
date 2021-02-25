@@ -2,6 +2,18 @@ import numpy as np
 import copy
 from tqdm import tqdm
 valid_pos_list = ['NOUN', 'VERB', 'ADV', 'ADJ']
+
+
+
+
+
+
+class AttackGA():
+    pass
+
+
+
+
 class AttackPSO():
     def __init__(self, model, word_candidate, word_dict, max_iters=100, pop_size=60):
         self.model = model
@@ -237,3 +249,4 @@ class AttackPSO():
                 all_elite_particle = elite
 
         return None
+

@@ -27,7 +27,10 @@ assert len(attack_samples) == len(all_pos_tags)
 
 word_candidates = load_word_candidates(params.substitue_type)
 
-attacker = eval('Attack' + params.Attacker)(...)
+attacker = eval('Attack' + params.Attacker)(victim_model, word_candidate, word_dict, max_iters=100, pop_size=60)
+
+
+
 
 
 def encode_sentence(orig_sent):
