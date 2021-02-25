@@ -10,25 +10,18 @@ import math
 class sst2_Dataset(Dataset):
     def __init__(self, dataset, tokenizer):
         # dataset是用pandas读取的DataFrame类，tokenizer是BertTokenizer
-        self.dataset = dataset
-        self.tokenizer = tokenizer
         self.len = len(dataset)
+        # 将dataset中的句子和标签分开
+        sentences = [sample[0] for sample in dataset.values]
+        self.labels = [sample[1] for sample in dataset.values]
+        # 将所有句子都进行tokenize并保存
+        tokenized_sentences = tokenizer(sentences)
+        self.input_ids = [torch.tensor(sample) for sample in tokenized_sentences['input_ids']]
+        self.token_type_ids = [torch.tensor(sample) for sample in tokenized_sentences['token_type_ids']]
+        self.attention_mask = [torch.tensor(sample) for sample in tokenized_sentences['attention_mask']]
 
     def __getitem__(self, index):
-        这个地方对数据的处理应该尽量方法init方法里面，因为这个在跑模型的时候每次都会重复以下这些操作（包括convert token， 创建tensor)，比较费时间，最好在初始化的时候全部做好
-        
-        sentence, label = train_set.iloc[index, :]
-        # 获取句子的tokens
-        tokens = ['[CLS]']
-        sentence_tokens = self.tokenizer.tokenize(sentence)
-        tokens += sentence_tokens + ['[SEP]']
-        input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
-        # 将id和label全部变成tensor类型
-        input_ids = torch.tensor(input_ids)
-        label = torch.tensor(label)
-
-        token_type_ids = torch.zeros_like(input_ids)
-        return input_ids, token_type_ids, label
+        return self.input_ids[index], self.token_type_ids[index], self.attention_mask[index], self.labels[index]
 
     def __len__(self):
         return self.len
@@ -38,17 +31,18 @@ class sst2_Dataset(Dataset):
 def collate_fn(data):
     input_ids = [single_data[0] for single_data in data]
     token_type_ids = [single_data[1] for single_data in data]
-    label = [single_data[2] for single_data in data]
+    attention_masks = [single_data[2] for single_data in data]
+    labels = [single_data[3] for single_data in data]
     # 利用zero_padding填充不等长的句子
     input_ids = pad_sequence(input_ids, batch_first=True)
     token_type_ids = pad_sequence(token_type_ids, batch_first=True)
-    attention_mask = torch.ones_like(token_type_ids)   这里的attention mask 应该有点问题，最好再查看一下原来博客是怎么做的 https://leemeng.tw/attack_on_bert_transfer_learning_in_nlp.html
-    return input_ids, token_type_ids, attention_mask, label
+    attention_masks = pad_sequence(attention_masks, batch_first=True)
+    return input_ids, token_type_ids, attention_masks, labels
 
 
 # 训练模型
 def train(net, trainloader, testloader=None):
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-5)   最好用 AdamW， weight_decay 当做超参数进行调整
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-5, weight_decay=0.01)
     epoch = 20
     total_num = len(trainloader)
     max_accuracy = 0
@@ -71,9 +65,8 @@ def train(net, trainloader, testloader=None):
                 num = math.floor(count / total_num * 25)
                 progress_bar = '[' + '#' * num + ' ' * (25 - num) + ']'
                 print(f'\033[0;31m\r第{i}回合：{num * 4}% {progress_bar}\033[0m', end='')
-        print('\n')
         # 一个回合后检查正确率
-        print(f'第{i}回合训练集')
+        print(f'\n第{i}回合训练集')
         get_prediction(net, trainloader)
         if testloader is not None:
             print(f'第{i}回合测试集')
@@ -87,7 +80,6 @@ def train(net, trainloader, testloader=None):
 # 计算模型正确率
 def get_prediction(net, dataloader):
     net.eval()
-    batch_size = dataloader.batch_size
     total = 0
     correct = 0
     with torch.no_grad():
@@ -99,7 +91,7 @@ def get_prediction(net, dataloader):
             prediction = outputs.logits
             _, prediction = torch.max(prediction, 1)
             correct += (prediction == data[3]).sum().item()
-            total += batch_size   这里直接+batch_size 应该有点问题， 最后一个batch 应该不足 batch_size 大小
+            total += len(prediction)
     print('正确率为{:.2f}%'.format(correct / total * 100))
     return correct / total * 100
 
@@ -115,10 +107,10 @@ if __name__ == '__main__':
     # 加载DataLoader
     TRAIN_BATCH_SIZE = 128
     TEST_BATCH_SIZE = 128
-    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, collate_fn=collate_fn)  这里要shuffle
-    test_dataloader = DataLoader(test_dataset, batch_size=TEST_BATCH_SIZE, collate_fn=collate_fn)
+    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, collate_fn=collate_fn, shuffle=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=TEST_BATCH_SIZE, collate_fn=collate_fn,  shuffle=True)
     # 加载已有的情感分类模型BertForSequenceClassification
-    net = BertForSequenceClassification.from_pretrained('bert-base-uncased')
+    net = BertForSequenceClassification.from_pretrained('BertForSentimentClassification')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
     net = net.to(device)
