@@ -1,29 +1,48 @@
 import numpy as np
 import copy
 from tqdm import tqdm
+
 valid_pos_list = ['NOUN', 'VERB', 'ADV', 'ADJ']
+import abc
 
 
-
-
-
-
-class AttackGA():
-    pass
-
-
-
-
-class AttackPSO():
-    def __init__(self, model, word_candidate, word_dict, max_iters=100, pop_size=60):
+class Attacker(metaclass=abc.ABCMeta):
+    def __init__(self, model, word_candidate, word_dict, max_iters=100, pop_size=60, target_label=1):
         self.model = model
         self.word_candidate = word_candidate
         self.word_dict = word_dict
         self.inv_word_dict = {idx: w for w, idx in word_dict.items()}
         self.max_iters = max_iters
         self.pop_size = pop_size
+        self.target_label = target_label
 
+        # Notice here
+        self.query_nums = 0
+
+    @abc.abstractmethod
+    def attack(self, orig_text, pos_list):
+        pass
+
+
+
+
+
+
+class AttackGA(Attacker):
+    def __init__(self, model, word_candidate, word_dict, max_iters=100, pop_size=60, target_label=1):
+        super(AttackGA, self).__init__(model, word_candidate, word_dict, max_iters=max_iters, pop_size=pop_size,
+                                       target_label=target_label)
+
+
+
+class AttackPSO(Attacker):
+    def __init__(self, model, word_candidate, word_dict, max_iters=100, pop_size=60, target_label=1):
+        super(AttackPSO, self).__init__(model, word_candidate, word_dict, max_iters=max_iters, pop_size=pop_size,
+                                        target_label=target_label)
         self.temp = 0.3
+
+
+
 
 
     def mutate(self, orig_text, select_prob, w_list):
@@ -32,19 +51,17 @@ class AttackPSO():
         replace_text = self.do_replace(orig_text, rand_idx, w_list[rand_idx])
         return replace_text
 
-
-    def generate_population(self, orig_text, neighbor_list, pop_size, text_len,neighbor_length):
+    def generate_population(self, orig_text, neighbor_list, pop_size, text_len, neighbor_length):
         w_list, prob_list = self.gen_h_score(text_len, neighbor_length, neighbor_list, orig_text)
         x_len = orig_text.shape[0]
         prob_len = prob_list.shape[0]
+
         if x_len != prob_len:
-            return None
+            print('x_len != prob_len')
+            raise RuntimeError
+
         all_generated_orig_text = [self.mutate(orig_text, prob_list, w_list) for _ in range(pop_size)]
         return all_generated_orig_text
-
-
-
-
 
     def norm(self, prob_list):
         new_prob_list = []
@@ -82,14 +99,19 @@ class AttackPSO():
         return w_list, h_score
 
     def gen_most_changes(self, idx, orig_text, single_neighbor_list):
-        new_x_list = [self.do_replace(orig_text, idx, w) if orig_text[idx] != w else orig_text for w in single_neighbor_list]
+        new_x_list = [self.do_replace(orig_text, idx, w) if orig_text[idx] != w else orig_text for w in
+                      single_neighbor_list]
 
-        x_text_list = [' '.join([self.inv_word_dict[ids_list[idx]] for idx in range(ids_list.size)]) for ids_list in new_x_list]
+        x_text_list = [' '.join([self.inv_word_dict[ids_list[idx]] for idx in range(ids_list.size)]) for ids_list in
+                       new_x_list]
+
+        # TODO: check
         if len(x_text_list) == 1:
             flags, scores = self.model.predict(x_text_list[0], batch=False)
         else:
             flags, scores = self.model.predict(x_text_list, batch=True)
-        _, orig_score = self.model.predict(' '.join([self.inv_word_dict[orig_text[idx]] for idx in range(orig_text.size)]), batch=False)
+        _, orig_score = self.model.predict(
+            ' '.join([self.inv_word_dict[orig_text[idx]] for idx in range(orig_text.size)]), batch=False)
         # print(scores, orig_score)
         new_x_scores = np.array(scores) - orig_score
         max_delta_score = np.max(new_x_scores)
@@ -100,21 +122,16 @@ class AttackPSO():
 
 
 
-
     def do_replace(self, orig_text, idx, new_word):
         x_new = orig_text.copy()
         x_new[idx] = new_word
         return x_new
 
-
-
-
-    def equal(self,a,b):
+    def equal(self, a, b):
         return -3 if a == b else 3
 
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
-
 
     def turn(self, elites, orig, turn_prob, x_len):
         new_text = copy.deepcopy(orig)
@@ -123,17 +140,15 @@ class AttackPSO():
                 new_text[i] = elites[i]
         return new_text
 
-    def count_change_ratio(self, text1,text2, x_len):
+    def count_change_ratio(self, text1, text2, x_len):
         change_ratio = float(np.sum(text1 != text2)) / float(x_len)
         return change_ratio
-
-
 
     def attack(self, orig_text, pos_list):
         x_adv = orig_text.copy()
         x_len = int(np.sum(np.sign(x_adv)))
         if x_len != len(pos_list):
-            # print('exception happen')
+            print('exception happen')
             return 0
         print('len measure: ', x_len, ' ', len(pos_list))
         neighbor_list = []
@@ -150,20 +165,25 @@ class AttackPSO():
         if np.sum(neighbor_length) == 0:
             return None
         print('neighbor length: ', neighbor_length)
-        try:
-            all_generated_orig_text = self.generate_population(orig_text, neighbor_list, self.pop_size, x_len,neighbor_length)
-        except ValueError:
-            return 0
-        if all_generated_orig_text is None:
-            return 0
+
+
+
+
+
+        all_generated_orig_text = self.generate_population(orig_text, neighbor_list, self.pop_size, x_len,
+                                                               neighbor_length)
+
+
+
 
         particles_elites = copy.deepcopy(all_generated_orig_text)  # [np.array([1,2,3]), np.array([1,2,3]) ]
-        input_particles = [' '.join([self.inv_word_dict[ids_list[idx]] for idx in range(ids_list.size)]) for ids_list in particles_elites]
+        input_particles = [' '.join([self.inv_word_dict[ids_list[idx]] for idx in range(ids_list.size)]) for ids_list in
+                           particles_elites]
         flags, scores = self.model.predict(input_particles, batch=True)
         part_elites_scores = scores
 
         max_score = np.max(scores)
-        particles_rank = np.argsort(scores)[::-1] # from bigger to smaller
+        particles_rank = np.argsort(scores)[::-1]  # from bigger to smaller
 
         top_attack = particles_rank[0]
         all_elite_particle = all_generated_orig_text[top_attack]
@@ -185,12 +205,11 @@ class AttackPSO():
             C1 = C1_origin - i / self.max_iters * (C1_origin - C2_origin)
             C2 = C2_origin + i / self.max_iters * (C1_origin - C2_origin)
 
-
             for id in range(self.pop_size):
                 for dim in range(x_len):
                     V_P[id][dim] = Omega * V_P[id][dim] + (1 - Omega) * (
-                                 self.equal(all_generated_orig_text[id][dim], particles_elites[id][dim])
-                                 + self.equal(all_generated_orig_text[id][dim], all_elite_particle[dim]))
+                            self.equal(all_generated_orig_text[id][dim], particles_elites[id][dim])
+                            + self.equal(all_generated_orig_text[id][dim], all_elite_particle[dim]))
                 turn_prob = [self.sigmoid(V_P[id][d]) for d in range(x_len)]
 
                 P1 = C1
@@ -203,7 +222,8 @@ class AttackPSO():
                     all_generated_orig_text[id] = self.turn(all_elite_particle, all_generated_orig_text[id],
                                                             turn_prob, x_len)
 
-            input_origin_text = [' '.join([self.inv_word_dict[ids_list[idx]] for idx in range(ids_list.size)]) for ids_list in all_generated_orig_text]
+            input_origin_text = [' '.join([self.inv_word_dict[ids_list[idx]] for idx in range(ids_list.size)]) for
+                                 ids_list in all_generated_orig_text]
             flags, scores = self.model.predict(input_origin_text, batch=True)
 
             pop_ranks = np.argsort(scores)[::-1]
@@ -224,7 +244,6 @@ class AttackPSO():
                     new_generated_text.append(mutated_text)
                 else:
                     new_generated_text.append(text)
-
 
             all_generated_orig_text = new_generated_text
 
@@ -249,4 +268,3 @@ class AttackPSO():
                 all_elite_particle = elite
 
         return None
-

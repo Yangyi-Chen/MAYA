@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/RLTextualAttack.iml" filepath="$PROJECT_DIR$/.idea/RLTextualAttack.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../RobustVisionFeatures/.idea/RobustVisionFeatures.iml" filepath="$PROJECT_DIR$/../RobustVisionFeatures/.idea/RobustVisionFeatures.iml" />
     </modules>
   </component>
 </project>
