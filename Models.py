@@ -64,7 +64,7 @@ class LSTM(VictimModel):
         '''
 
         pass
-
+    #
     def get_label(self, input):
         pass
 
@@ -79,6 +79,8 @@ class BERT(VictimModel):
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 
+
+
     def forward(self, inputs, attention_masks):
         return
 
@@ -87,9 +89,9 @@ class BERT(VictimModel):
     def get_probs(self, input):
         pass
 
+
     def get_label(self, input):
         pass
-
 
 
 

@@ -1,20 +1,21 @@
 import numpy as np
 import copy
 from tqdm import tqdm
+import torch
 
 valid_pos_list = ['NOUN', 'VERB', 'ADV', 'ADJ']
 import abc
 
 
 class Attacker(metaclass=abc.ABCMeta):
-    def __init__(self, model, word_candidate, word_dict, max_iters=100, pop_size=60, target_label=1):
+    def __init__(self, model, word_candidate, word_dict, max_iters=100, pop_size=60, orig_label=0):
         self.model = model
         self.word_candidate = word_candidate
         self.word_dict = word_dict
         self.inv_word_dict = {idx: w for w, idx in word_dict.items()}
         self.max_iters = max_iters
         self.pop_size = pop_size
-        self.target_label = target_label
+        self.orig_label = orig_label
 
         # Notice here
         self.query_nums = 0
@@ -24,26 +25,17 @@ class Attacker(metaclass=abc.ABCMeta):
         pass
 
 
-
-
-
-
 class AttackGA(Attacker):
-    def __init__(self, model, word_candidate, word_dict, max_iters=100, pop_size=60, target_label=1):
+    def __init__(self, model, word_candidate, word_dict, max_iters=100, pop_size=60, orig_label=0):
         super(AttackGA, self).__init__(model, word_candidate, word_dict, max_iters=max_iters, pop_size=pop_size,
-                                       target_label=target_label)
-
+                                       orig_label=orig_label)
 
 
 class AttackPSO(Attacker):
-    def __init__(self, model, word_candidate, word_dict, max_iters=100, pop_size=60, target_label=1):
+    def __init__(self, model, word_candidate, word_dict, max_iters=100, pop_size=60, orig_label=0):
         super(AttackPSO, self).__init__(model, word_candidate, word_dict, max_iters=max_iters, pop_size=pop_size,
-                                        target_label=target_label)
+                                        orig_label=orig_label)
         self.temp = 0.3
-
-
-
-
 
     def mutate(self, orig_text, select_prob, w_list):
         x_len = orig_text.shape[0]
@@ -62,6 +54,10 @@ class AttackPSO(Attacker):
 
         all_generated_orig_text = [self.mutate(orig_text, prob_list, w_list) for _ in range(pop_size)]
         return all_generated_orig_text
+
+
+
+
 
     def norm(self, prob_list):
         new_prob_list = []
@@ -89,11 +85,9 @@ class AttackPSO(Attacker):
                 continue
             w, p = self.gen_most_changes(i, orig_text, neighbor_list[i])
             w_list.append(w)
-            prob_list.append(p)
+            prob_list.append(-p)
 
         h_score = self.norm(prob_list)
-
-        # assert len(h_score) == len(w_list) == orig_text.shape[0]
         h_score = np.array(h_score)
 
         return w_list, h_score
@@ -105,19 +99,26 @@ class AttackPSO(Attacker):
         x_text_list = [' '.join([self.inv_word_dict[ids_list[idx]] for idx in range(ids_list.size)]) for ids_list in
                        new_x_list]
 
-        # TODO: check
-        if len(x_text_list) == 1:
-            flags, scores = self.model.predict(x_text_list[0], batch=False)
-        else:
-            flags, scores = self.model.predict(x_text_list, batch=True)
-        _, orig_score = self.model.predict(
-            ' '.join([self.inv_word_dict[orig_text[idx]] for idx in range(orig_text.size)]), batch=False)
-        # print(scores, orig_score)
-        new_x_scores = np.array(scores) - orig_score
-        max_delta_score = np.max(new_x_scores)
-        target_word = new_x_list[np.argsort(new_x_scores)[-1]][idx]
-        return target_word, max_delta_score,
+        probs_li = []
+        for x_text in x_text_list:
+            probs = self.model.get_probs(x_text)
+            probs_li.append(probs)
+            self.query_nums += 1
 
+        orig_probs = self.model.get_probs(
+            ' '.join([self.inv_word_dict[orig_text[idx]] for idx in range(orig_text.size)]))
+        self.query_nums += 1
+
+        modify_probs = torch.stack(probs_li, dim=0)  # batch_size, classes
+
+        modify_targeta_probs = modify_probs[:, self.orig_label]
+
+        new_x_scores = np.array(modify_targeta_probs) - orig_probs[0, self.orig_label]
+
+        min_delta_score = np.min(new_x_scores)
+        target_word = new_x_list[np.argsort(new_x_scores)[0]][idx]
+
+        return target_word, min_delta_score,
 
 
 
@@ -166,15 +167,8 @@ class AttackPSO(Attacker):
             return None
         print('neighbor length: ', neighbor_length)
 
-
-
-
-
         all_generated_orig_text = self.generate_population(orig_text, neighbor_list, self.pop_size, x_len,
-                                                               neighbor_length)
-
-
-
+                                                           neighbor_length)
 
         particles_elites = copy.deepcopy(all_generated_orig_text)  # [np.array([1,2,3]), np.array([1,2,3]) ]
         input_particles = [' '.join([self.inv_word_dict[ids_list[idx]] for idx in range(ids_list.size)]) for ids_list in
