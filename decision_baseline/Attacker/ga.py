@@ -1,0 +1,4 @@
+
+class AttackGA():
+    pass
+
