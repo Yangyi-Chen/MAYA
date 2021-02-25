@@ -22,6 +22,16 @@ class VictimModel(nn.Module, metaclass=abc.ABCMeta):
         """
         pass
 
+    def get_label(self, input):
+        '''
+
+        :param input: a encoded sentnece, tokenizer encoded sentence for bert & word_id str for lstm
+        :return: predict label for this sentence
+        '''
+
+        pass
+
+
 
 class LSTM(VictimModel):
     def __init__(self, vocab_size, embed_dim=300, hidden_size=1024, layers=2, bidirectional=True, dropout=0,
@@ -51,6 +61,9 @@ class LSTM(VictimModel):
         '''
 
         pass
+    
+    def get_label(self, input):
+        pass
 
 
 
@@ -70,6 +83,8 @@ class BERT(VictimModel):
     def get_probs(self, input):
         pass
 
+    def get_label(self, input):
+        pass
 
 
 
