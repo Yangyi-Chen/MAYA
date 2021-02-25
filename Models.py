@@ -1,5 +1,5 @@
 import torch.nn as nn
-from transformers import BertForSequenceClassification
+from transformers import BertForSequenceClassification, BertTokenizer
 import abc
 from torch.nn.utils.rnn import pack_padded_sequence
 import torch
@@ -17,7 +17,7 @@ class VictimModel(nn.Module, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_probs(self, input):
         """
-        :param input: a encoded sentnece, tokenizer encoded sentence for bert & word_id str for lstm
+        :param input: a raw sentnece, need to convert the raw sentence to encoded id
         :return: probability distribution for each class
         """
         pass
@@ -25,7 +25,7 @@ class VictimModel(nn.Module, metaclass=abc.ABCMeta):
     def get_label(self, input):
         '''
 
-        :param input: a encoded sentnece, tokenizer encoded sentence for bert & word_id str for lstm
+        :param input: a raw sentnece, need to convert the raw sentence to encoded id
         :return: predict label for this sentence
         '''
 
@@ -35,7 +35,7 @@ class VictimModel(nn.Module, metaclass=abc.ABCMeta):
 
 class LSTM(VictimModel):
     def __init__(self, vocab_size, embed_dim=300, hidden_size=1024, layers=2, bidirectional=True, dropout=0,
-                 output_class=2):
+                 output_class=2, vocab=None):
         super(LSTM, self).__init__()
 
         self.embedding = nn.Embedding(vocab_size, embed_dim)
@@ -43,6 +43,9 @@ class LSTM(VictimModel):
                             num_layers=layers, batch_first=True,
                             bidirectional=bidirectional, dropout=dropout, )
         self.linear = nn.Linear(hidden_size * 2 if bidirectional else hidden_size, output_class)
+        self.vocab = vocab
+
+
 
     def forward(self, padded_texts, lengths):
         texts_embedding = self.embedding(padded_texts)
@@ -61,7 +64,7 @@ class LSTM(VictimModel):
         '''
 
         pass
-    
+
     def get_label(self, input):
         pass
 
@@ -73,6 +76,7 @@ class BERT(VictimModel):
     def __init__(self,):
         super(BERT, self).__init__()
         self.bert = BertForSequenceClassification.from_pretrained('bert-base-uncased')
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 
     def forward(self, inputs, attention_masks):

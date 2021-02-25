@@ -17,5 +17,5 @@ def load_word_candidates(candidates_path):
     pass
 
 
-
-
+def load_word_dict():
+    pass

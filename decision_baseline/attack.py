@@ -1,6 +1,5 @@
-from Attacker.ga import AttackGA
-from Attacker.pso import AttackPSO
-from load_utils import load_victim_model, load_dataset, load_pos_tags, load_word_candidates
+from attack_utils import Attacker, AttackGA, AttackPSO
+from load_utils import load_victim_model, load_dataset, load_pos_tags, load_word_candidates, load_word_dict
 from Models import *
 import torch
 import numpy as np
@@ -26,8 +25,13 @@ all_pos_tags = load_pos_tags(params.postags_path)
 assert len(attack_samples) == len(all_pos_tags)
 
 word_candidates = load_word_candidates(params.substitue_type)
+word_dict = load_word_dict()
 
-attacker = eval('Attack' + params.Attacker)(victim_model, word_candidate, word_dict, max_iters=100, pop_size=60)
+
+
+
+attacker = eval('Attack' + params.Attacker)(victim_model, word_candidates, word_dict, max_iters=100, pop_size=60,
+                                            target_label=params.target_label)
 
 
 
