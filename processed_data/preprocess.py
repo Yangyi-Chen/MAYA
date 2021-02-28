@@ -6,7 +6,7 @@ import math
 # 将数据集中的单词全部转变为lemma和pos
 def transfer():
     nlp = stanza.Pipeline('en', processors='tokenize, mwt, pos, lemma')
-    types = ['test']
+    types = ['train', 'valid', 'test']
     for file in types:
         dataset = pd.read_csv(file+'.tsv', sep='\t')
         samples = dataset['sentence'].values
