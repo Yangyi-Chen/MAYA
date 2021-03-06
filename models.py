@@ -93,7 +93,6 @@ class Victim_BertForSequenceClassification(VictimModel):
                             token_type_ids=token_type_ids.to(device),
                             attention_mask=attention_mask.to(device),
                             labels=labels.to(device))
-        torch.cuda.empty_cache()
         return outputs
 
     def __call__(self, device='cpu', **kwargs):
