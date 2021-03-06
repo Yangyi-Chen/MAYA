@@ -27,7 +27,6 @@ class Trainer:
             self.optimizer.zero_grad()
             outputs.loss.backward()
             self.optimizer.step()
-            del outputs
             count += 1
             if count % 5 == 0:
                 self.progress_bar(count, total)
