@@ -5,6 +5,7 @@ from torch.nn.utils.rnn import pack_padded_sequence
 import torch
 from collections import namedtuple
 
+
 class VictimModel(nn.Module, metaclass=abc.ABCMeta):
 
     def __init__(self, **kwargs):
@@ -13,21 +14,20 @@ class VictimModel(nn.Module, metaclass=abc.ABCMeta):
     # training mode
     @abc.abstractmethod
     def train(self):
-        pass
+        raise Exception("Abstract method ""train"" method not be implemented!")
 
     # evaluation mode
     @abc.abstractmethod
     def eval(self):
-        pass
+        raise Exception("Abstract method ""eval"" method not be implemented!")
 
-    @staticmethod
     @abc.abstractmethod
-    def from_pretrained():
-        pass
+    def save_pretrained(self):
+        raise Exception("Abstract method ""save_pretrained"" method not be implemented!")
 
     @abc.abstractmethod
     def forward(self):
-        pass
+        raise Exception("Abstract method ""forward"" method not be implemented!")
 
     # get model's outputs, for users to call
     @abc.abstractmethod
@@ -36,7 +36,7 @@ class VictimModel(nn.Module, metaclass=abc.ABCMeta):
         :param input: a raw sentnece, need to convert the raw sentence to encoded id
         :return: probability distribution for each class, prediction of label for this sentence
         """
-        pass
+        raise Exception("Abstract method ""__call__"" method not be implemented!")
 
 
 class LSTM(VictimModel):
@@ -70,9 +70,9 @@ class LSTM(VictimModel):
 
 
 class Victim_BertForSequenceClassification(VictimModel):
-    def __init__(self, **kwargs):
+    def __init__(self, load_path='bert-base-uncased', **kwargs):
         super(Victim_BertForSequenceClassification, self).__init__(**kwargs)
-        self.bert = BertForSequenceClassification.from_pretrained('bert-base-uncased', **kwargs)
+        self.bert = BertForSequenceClassification.from_pretrained(load_path, **kwargs)
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.outputs = namedtuple('outputs', ['loss', 'probs', 'pred_labels'])
 
@@ -82,11 +82,8 @@ class Victim_BertForSequenceClassification(VictimModel):
     def eval(self):
         self.bert.eval()
 
-    @staticmethod
-    def from_pretrained(model_file, **kwargs):
-        model = Victim_BertForSequenceClassification()
-        model.bert = BertForSequenceClassification.from_pretrained(model_file, **kwargs)
-        return model
+    def save_pretrained(self, name):
+        self.bert.save_pretrained(name)
 
     def forward(self, device, input_ids, token_type_ids, attention_mask, labels=None):
         outputs = self.bert(input_ids=input_ids.to(device),
