@@ -5,7 +5,7 @@ import tensorflow as tf
 import stanza
 from MG.parser import ConstituencyParser
 from ADsamples_evaluation.eval_class import SentenceEncoder, GrammarChecker
-from MG.rl.rl import *
+from MG.rl import *
 
 
 class MGAttacker:
