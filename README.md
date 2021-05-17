@@ -6,11 +6,11 @@ Here are some brief introductions for main folders.
 
 ## models
 
-This folder  saves a file about pre-defined victim model structure (uniform interface to be called) and a sub-folder to save pre-trained victim-models. More details can be found when click in.
+This folder  saves a file about pre-defined victim model structure (uniform interface to be called) and a sub-folder to save pre-trained victim-models.
 
 ## MG
 
-This folder contains  python files to attack victim model and a sub-folder to train a reinforcement learning model. More details can be found when click in.
+This folder contains  python files to attack victim model and a sub-folder to train a reinforcement learning model. 
 
 ## Dataset
 
@@ -18,7 +18,7 @@ this folder contains different datasets and provide dataset templates in attack 
 
 ## ADsamples_evaluation
 
-This folder contains python files to evaluate adversarial samples. More details can be found when click in.
+This folder contains python files to evaluate adversarial samples.
 
 ## paraphrase_models
 
@@ -51,6 +51,8 @@ Now you could start MAYA attack by directly run the code “attack.py”.
 ```
 python3.7 attack.py
 ```
+
+
 
 
 
