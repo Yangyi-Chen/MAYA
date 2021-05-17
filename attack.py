@@ -99,6 +99,13 @@ if __name__ == '__main__':
     attack_times = 10
 
     print("initialize attacker")
+    # if use rl
+    # attack_model = BertForSequenceClassification.from_pretrained(
+    #     '../models/pretrained_models/mayapi_bert_for_sst2').to('cuda:0')
+    # attack_model.eval()
+    # agent = Agent(attack_model)
+    # attacker = RLMGAttacker(attack_times, victim_model, substitution, paraphrase_list, agent)
+    
     attacker = MGAttacker(attack_times, victim_model, substitution, paraphrase_list)
 
     # start attack
