@@ -447,12 +447,12 @@ class MGAttacker:
 
 class RLMGAttacker(MGAttacker):
     def __init__(self,
-                 attack_times,
-                 victim_model,
-                 substitution,
-                 paraphrasers,
-                 agent,
-                 attack_type: 'score' or 'decision'):
+                 attack_times=10,
+                 victim_model=None,
+                 substitution=None,
+                 paraphrasers=None,
+                 agent=None,
+                 attack_type='score'):
         super().__init__(attack_times, victim_model, substitution, paraphrasers)
         self.attack_type = attack_type
         self.agent = agent
