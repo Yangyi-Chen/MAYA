@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from MG.rl.rl import Agent
+from MG.rl import Agent
 from models.models import VictimBertForSequenceClassification
 from MG.multi_granularity import MGAttacker
 from MG.paraphrase_methods import T5, GPT2Paraphraser, BackTranslation
