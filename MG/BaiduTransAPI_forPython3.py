@@ -11,7 +11,8 @@ import time
 
 class Translator:
     def __init__(self):
-        self.app_dict = {'your id': 'your secret key'}
+        # input your id and yout secret key to call Baidu API
+        # self.app_dict = {'your id': 'your secret key'}
         self.httpClient = None
         self.myurl = '/api/trans/vip/translate'
 
