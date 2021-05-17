@@ -2,7 +2,7 @@ import pandas as pd
 import os
 from MG.rl.rl import Agent
 from models.models import VictimBertForSequenceClassification
-from MG.multi_granularity import MGAttacker, RLMGAttacker
+from MG.multi_granularity import MGAttacker
 from MG.paraphrase_methods import T5, GPT2Paraphraser, BackTranslation
 from MG.substitute_methods import SubstituteWithBert
 from tqdm import tqdm
@@ -28,8 +28,8 @@ def attack():
 
     for i in progress_bar:
         progress_bar.set_description(
-            '\033[0;31msuc:{}  fail:{} total:{}  suc_rate:{:.2f}%\033[0m'.format(
-                suc, fail, attack_num, suc_rate))
+            '\033[0;31mparaphase:{} suc:{}  fail:{} total:{}  suc_rate:{:.2f}%\033[0m'.format(
+                paraphrases, suc, fail, attack_num, suc_rate))
 
         info = attacker.attack(samples[i], labels[i])
 
@@ -57,30 +57,40 @@ def attack():
 
 if __name__ == '__main__':
     # fill your own dataset path
-    dataset = pd.read_csv('../datasets/sst2.tsv', sep='\t')
+    print("load dataset")
+    dataset = pd.read_csv('datasets/sst2.tsv', sep='\t')
 
     samples = dataset['sentence'].values
     # samples = dataset[['sentence1', 'sentence2']].values
     labels = dataset['label'].values
 
     # fill your own victim model path
-    victim_model = VictimBertForSequenceClassification('../models/pretrained_models/bert_for_sst2')
+    print("load victim model")
+    victim_model = VictimBertForSequenceClassification('models/pretrained_models/bert_for_sst2')
 
     # choose your paraphrase models
+    paraphrases = ['t5']
     paraphrase_list = []
 
-    # use back translation
-    paraphrase_list.append(BackTranslation())
+    if 'bt' in paraphrases:
+        # use back translation
+        print("initialize back tran")
+        paraphrase_list.append(BackTranslation())
 
-    # use T5
-    paraphrase_list.append(T5('cuda:0'))
+    if 't5' in paraphrases:
+        # use T5
+        print("initialize T5")
+        paraphrase_list.append(T5('cuda:0'))
 
-    # use gpt2 paraphrase model
-    # fill your own gpt2 model path
-    gpt2_path = '../paraphrase_models/style_transfer_paraphrase/paraphraser_gpt2_large'
-    paraphrase_list.append(GPT2Paraphraser(gpt2_path, 'cuda:1'))
+    if 'gpt2' in paraphrases:
+        # use gpt2 paraphrase model
+        # fill your own gpt2 model path
+        print("initialize gpt2")
+        gpt2_path = 'paraphrase_models/style_transfer_paraphrase/paraphraser_gpt2_large'
+        paraphrase_list.append(GPT2Paraphraser(gpt2_path, 'cuda:1'))
 
     # choose your paraphrase models
+    print("initialize substitution model")
     substitution = SubstituteWithBert(victim_model, 'cuda:0')
 
     # output result
@@ -88,14 +98,9 @@ if __name__ == '__main__':
 
     attack_times = 10
 
-    # if use rl
-    # attack_model = BertForSequenceClassification.from_pretrained(
-    #     '../models/pretrained_models/mayapi_bert_for_sst2').to('cuda:0')
-    # attack_model.eval()
-    # agent = Agent(attack_model)
-    # attacker = RLMGAttacker(attack_times, victim_model, substitution, paraphrase_list, agent)
-
+    print("initialize attacker")
     attacker = MGAttacker(attack_times, victim_model, substitution, paraphrase_list)
 
-    #start attack
+    # start attack
+    print("start attack")
     attack()
