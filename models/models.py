@@ -3,7 +3,6 @@ import pandas as pd
 import abc
 import torch
 import stanza
-from lib.downloader import Downloader
 from transformers import BertForSequenceClassification, BertTokenizer, \
     RobertaForSequenceClassification, RobertaTokenizer, \
     XLNetForSequenceClassification, XLNetTokenizer
