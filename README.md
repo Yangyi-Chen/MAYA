@@ -28,6 +28,10 @@ This folder saves the GPT2 paraphrase model (not necessary when not use GPT2 mod
 
 ### Download all folders
 
+### Download GPT2 model
+
+https://drive.google.com/drive/folders/1RmiXX8u1ojj4jorj_QgxOWWkryDIdie-
+
 ### Prepare victim model
 
 When do MAYA attack, you need to implement the uniform interface defined in “models.py”. All you have to do is just to implement the “\__call__” function and there are some victim model classes you can directly use (BiLSTM, BERT and RoBERTa), so you only need to prepare your own victim model (e.g. [SST-2 BERT](https://drive.google.com/drive/folders/1T9dq05YcVluuQ9UpEpg_KHya51HycuYU)).
@@ -36,7 +40,9 @@ When do MAYA attack, you need to implement the uniform interface defined in “m
 
 We use tsv format to save dataset. You can found more information in dataset folder.
 
+### Register an account for Baidu Translation API
 
+You could visit https://fanyi-api.baidu.com/product/11 to get registration and then apply for your application id and secret key. And then fill them in “BaiduTransAPI_forPython3.py”in MG folder.
 
 ### Run attacking code
 
@@ -50,5 +56,7 @@ python3.7 attack.py
 
 ### Prepare RL model (optional)
 
-We provide several checkpoints of out pre-trained RL model for you to use, 
+We provide several checkpoints of out pre-trained RL model for you to use (https://drive.google.com/drive/folders/1GfWs8YN9hRPwN7CmTrgfuh028KWqrH2M).
+
+You could get how to use it in “attack.py”.
 
