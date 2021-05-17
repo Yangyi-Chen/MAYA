@@ -1,7 +1,7 @@
 import abc
 import torch
 from transformers import PegasusForConditionalGeneration, PegasusTokenizer
-from lib.BaiduTransAPI_forPython3 import Translator
+from MG.BaiduTransAPI_forPython3 import Translator
 from paraphrase_models.style_transfer_paraphrase.inference_utils import GPT2Generator
 
 
