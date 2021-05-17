@@ -58,7 +58,7 @@ python3.7 attack.py
 
 ### Prepare RL model (optional)
 
-We provide several checkpoints of out pre-trained RL model for you to use (https://drive.google.com/drive/folders/1GfWs8YN9hRPwN7CmTrgfuh028KWqrH2M).
+We provide several checkpoints of our pre-trained RL model for you to use (https://drive.google.com/drive/folders/1GfWs8YN9hRPwN7CmTrgfuh028KWqrH2M).
 
 You could get how to use it in “attack.py”.
 
