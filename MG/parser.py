@@ -5,7 +5,7 @@ from nltk.tree import Tree
 
 class ConstituencyParser:
     def __init__(self):
-        self.parser = Parser.load('crf-con-roberta-en')
+        self.parser = Parser.load('crf-con-en')
 
     @staticmethod
     def __sentence_to_list(sentence):
