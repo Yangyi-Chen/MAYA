@@ -1,6 +1,6 @@
 # MAYA
 
-This is the official code base for the EMNLP 2021 paper, "[**Multi-granularity Textual Adversarial Attack with Behavior Cloning**](https://arxiv.org/pdf/1912.10375.pdf)".
+This is the official code base for the EMNLP 2021 paper, "[**Multi-granularity Textual Adversarial Attack with Behavior Cloning**](https://aclanthology.org/2021.emnlp-main.371.pdf)".
 
 Here are some brief introductions for main folders.
 
@@ -69,4 +69,21 @@ python attack.py
 We provide several checkpoints of our pre-trained RL model for you to use (https://drive.google.com/drive/folders/1GfWs8YN9hRPwN7CmTrgfuh028KWqrH2M).
 
 You could get how to use it in “attack.py”.
+
+
+
+## Citation
+
+If you find it useful, please cite the following work:
+
+
+
+```
+@article{chen2021multi,
+  title={Multi-granularity Textual Adversarial Attack with Behavior Cloning},
+  author={Chen, Yangyi and Su, Jin and Wei, Wei},
+  journal={arXiv preprint arXiv:2109.04367},
+  year={2021}
+}
+```
 
